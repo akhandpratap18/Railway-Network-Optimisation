@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Railway Network Optimization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #333;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .page {
+        display: none;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .page.active {
+        display: block;
+      }
+
+      .page-header {
+        background: linear-gradient(135deg, #4caf50, #45a049);
+        color: white;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .page-content {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        min-height: 600px;
+        gap: 0;
+      }
+
+      .sidebar {
+        background: #f8f9fa;
+        padding: 20px;
+        border-right: 1px solid #dee2e6;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #495057;
+      }
+
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+      }
+
+      .form-group input:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #4caf50;
+      }
+
+      .btn {
+        background: linear-gradient(135deg, #4caf50, #45a049);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s;
+        width: 100%;
+        margin-bottom: 10px;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
+      }
+
+      .btn-secondary:hover {
+        box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+      }
+
+      .btn-danger:hover {
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+      }
+
+      .graph-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        padding: 0;
+        min-height: 600px;
+        height: 100%;
+      }
+
+      #network-graph,
+      #path-graph {
+        width: 90%;
+        height: 90%;
+        min-width: 500px;
+        min-height: 400px;
+        max-width: 1000px;
+        max-height: 700px;
+        margin: auto;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border-radius: 12px;
+        transition: box-shadow 0.2s;
+      }
+
+      .stats {
+        background: #e9ecef;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+
+      .stats h3 {
+        margin-bottom: 10px;
+        color: #495057;
+      }
+
+      .stat-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+      }
+
+      .algorithm-selector {
+        margin-bottom: 20px;
+      }
+
+      .algorithm-option {
+        display: block;
+        margin-bottom: 10px;
+        cursor: pointer;
+      }
+
+      .algorithm-option input {
+        margin-right: 8px;
+      }
+
+      .path-result {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 20px;
+        display: none;
+      }
+
+      .path-result.show {
+        display: block;
+      }
+
+      .path-result h4 {
+        color: #155724;
+        margin-bottom: 10px;
+      }
+
+      .path-steps {
+        list-style: none;
+        padding: 0;
+      }
+
+      .path-steps li {
+        background: white;
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        border-radius: 5px;
+        border-left: 4px solid #28a745;
+      }
+
+      .error-message {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        display: none;
+      }
+
+      .error-message.show {
+        display: block;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 20px;
+        display: none;
+      }
+
+      .loading.show {
+        display: block;
+      }
+
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #4caf50;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 900px) {
+        .page-content {
+          grid-template-columns: 1fr;
+        }
+        .graph-container {
+          min-height: 400px;
+        }
+        #network-graph,
+        #path-graph {
+          min-width: 0;
+          min-height: 300px;
+          width: 100%;
+          height: 300px;
+          max-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🚂 Railway Network Optimization</h1>
+        <p>
+          Design and optimize railway networks with advanced pathfinding
+          algorithms
+        </p>
+      </div>
+
+      <!-- Graph Builder Page -->
+      <div id="graph-builder" class="page active">
+        <div class="page-header">
+          <h2>📍 Network Builder</h2>
+          <p>Create stations and tracks to build your railway network</p>
+        </div>
+        <div class="page-content">
+          <div class="sidebar">
+            <div class="stats">
+              <h3>Network Statistics</h3>
+              <div class="stat-item">
+                <span>Stations:</span>
+                <span id="station-count">0</span>
+              </div>
+              <div class="stat-item">
+                <span>Tracks:</span>
+                <span id="track-count">0</span>
+              </div>
+              <div class="stat-item">
+                <span>Total Distance:</span>
+                <span id="total-distance">0 km</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="station-name">Add New Station</label>
+              <input
+                type="text"
+                id="station-name"
+                placeholder="Enter station name"
+              />
+              <button class="btn" onclick="addStation()">Add Station</button>
+            </div>
+
+            <div class="form-group">
+              <label for="track-source">Add New Track</label>
+              <select id="track-source">
+                <option value="">Select source station</option>
+              </select>
+              <select id="track-destination">
+                <option value="">Select destination station</option>
+              </select>
+              <input
+                type="number"
+                id="track-distance"
+                placeholder="Distance (km)"
+                min="1"
+              />
+              <button class="btn" onclick="addTrack()">Add Track</button>
+            </div>
+
+            <button class="btn btn-secondary" onclick="clearNetwork()">
+              Clear Network
+            </button>
+            <button
+              class="btn"
+              onclick="proceedToPathFinder()"
+              id="proceed-btn"
+              disabled
+            >
+              Find Optimal Paths →
+            </button>
+
+            <div class="error-message" id="builder-error"></div>
+          </div>
+          <div class="graph-container">
+            <div id="network-graph"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Path Finder Page -->
+      <div id="path-finder" class="page">
+        <div class="page-header">
+          <h2>🎯 Path Optimizer</h2>
+          <p>Find optimal routes using advanced algorithms</p>
+        </div>
+        <div class="page-content">
+          <div class="sidebar">
+            <button class="btn btn-secondary" onclick="backToBuilder()">
+              ← Back to Builder
+            </button>
+
+            <div class="algorithm-selector">
+              <h3>Select Algorithm</h3>
+              <label class="algorithm-option">
+                <input type="radio" name="algorithm" value="astar" checked />
+                A* Search (Shortest Path)
+              </label>
+              <label class="algorithm-option">
+                <input type="radio" name="algorithm" value="dijkstra" />
+                Dijkstra's Algorithm
+              </label>
+              <label class="algorithm-option">
+                <input type="radio" name="algorithm" value="bfs" />
+                BFS (Minimum Nodes)
+              </label>
+              <label class="algorithm-option">
+                <input type="radio" name="algorithm" value="dfs" />
+                DFS (All Paths)
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label for="path-source">Source Station</label>
+              <select id="path-source">
+                <option value="">Select source</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="path-destination">Destination Station</label>
+              <select id="path-destination">
+                <option value="">Select destination</option>
+              </select>
+            </div>
+
+            <button class="btn" onclick="findPath()">Find Path</button>
+            <button class="btn btn-danger" onclick="clearPath()">
+              Clear Path
+            </button>
+
+            <div class="loading" id="path-loading">
+              <div class="spinner"></div>
+              Computing optimal path...
+            </div>
+
+            <div class="error-message" id="path-error"></div>
+
+            <div class="path-result" id="path-result">
+              <h4>Optimal Path Found</h4>
+              <p>
+                <strong>Algorithm:</strong> <span id="result-algorithm"></span>
+              </p>
+              <p>
+                <strong>Total Distance:</strong>
+                <span id="result-distance"></span> km
+              </p>
+              <p>
+                <strong>Number of Stops:</strong>
+                <span id="result-stops"></span>
+              </p>
+              <h5>Route:</h5>
+              <ul class="path-steps" id="path-steps"></ul>
+            </div>
+          </div>
+          <div class="graph-container">
+            <div id="path-graph"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Global variables
+      let stations = new Map();
+      let tracks = new Map();
+      let network = null;
+      let pathNetwork = null;
+      let currentPath = [];
+
+      // Network data structure
+      let networkData = {
+        nodes: new vis.DataSet([]),
+        edges: new vis.DataSet([]),
+      };
+
+      // Initialize the application
+      document.addEventListener("DOMContentLoaded", function () {
+        initializeGraphBuilder();
+      });
+
+      // Graph Builder Functions
+      function initializeGraphBuilder() {
+        const container = document.getElementById("network-graph");
+        const options = {
+          physics: {
+            enabled: true,
+            stabilization: { iterations: 100 },
+          },
+          nodes: {
+            shape: "dot",
+            size: 20,
+            font: { size: 14, color: "#333" },
+            color: {
+              background: "#4CAF50",
+              border: "#45a049",
+              highlight: { background: "#66BB6A", border: "#4CAF50" },
+            },
+          },
+          edges: {
+            font: { size: 12, color: "#666" },
+            color: { color: "#848484" },
+            width: 2,
+            smooth: { type: "continuous" },
+          },
+          interaction: {
+            hover: true,
+            selectConnectedEdges: false,
+          },
+        };
+
+        network = new vis.Network(container, networkData, options);
+        updateStats();
+      }
+
+      function addStation() {
+        const nameInput = document.getElementById("station-name");
+        const name = nameInput.value.trim();
+
+        if (!name) {
+          showError("builder-error", "Please enter a station name");
+          return;
+        }
+
+        if (stations.has(name)) {
+          showError("builder-error", "Station already exists");
+          return;
+        }
+
+        // Add station to data structure
+        const stationId = stations.size + 1;
+        stations.set(name, { id: stationId, name: name, platforms: 1 });
+
+        // Add to visualization
+        networkData.nodes.add({
+          id: stationId,
+          label: name,
+        });
+
+        // Update dropdowns
+        updateStationDropdowns();
+        updateStats();
+        nameInput.value = "";
+        clearError("builder-error");
+
+        // Enable proceed button if we have at least 2 stations
+        if (stations.size >= 2) {
+          document.getElementById("proceed-btn").disabled = false;
+        }
+      }
+
+      function addTrack() {
+        const sourceSelect = document.getElementById("track-source");
+        const destSelect = document.getElementById("track-destination");
+        const distanceInput = document.getElementById("track-distance");
+
+        const sourceName = sourceSelect.value;
+        const destName = destSelect.value;
+        const distance = parseInt(distanceInput.value);
+
+        if (!sourceName || !destName) {
+          showError(
+            "builder-error",
+            "Please select both source and destination stations"
+          );
+          return;
+        }
+
+        if (sourceName === destName) {
+          showError(
+            "builder-error",
+            "Source and destination cannot be the same"
+          );
+          return;
+        }
+
+        if (!distance || distance <= 0) {
+          showError("builder-error", "Please enter a valid distance");
+          return;
+        }
+
+        const trackKey = `${sourceName}-${destName}`;
+        const reverseKey = `${destName}-${sourceName}`;
+
+        if (tracks.has(trackKey) || tracks.has(reverseKey)) {
+          showError(
+            "builder-error",
+            "Track already exists between these stations"
+          );
+          return;
+        }
+
+        const sourceStation = stations.get(sourceName);
+        const destStation = stations.get(destName);
+
+        // Add track to data structure
+        tracks.set(trackKey, {
+          id: tracks.size + 1,
+          source: sourceName,
+          destination: destName,
+          distance: distance,
+        });
+
+        // Add to visualization
+        networkData.edges.add({
+          id: tracks.size,
+          from: sourceStation.id,
+          to: destStation.id,
+          label: `${distance} km`,
+          value: distance,
+        });
+
+        updateStats();
+        distanceInput.value = "";
+        sourceSelect.value = "";
+        destSelect.value = "";
+        clearError("builder-error");
+      }
+
+      function updateStationDropdowns() {
+        const sourceSelect = document.getElementById("track-source");
+        const destSelect = document.getElementById("track-destination");
+        const pathSourceSelect = document.getElementById("path-source");
+        const pathDestSelect = document.getElementById("path-destination");
+
+        const selects = [
+          sourceSelect,
+          destSelect,
+          pathSourceSelect,
+          pathDestSelect,
+        ];
+
+        selects.forEach((select) => {
+          // Keep the first option (placeholder)
+          const firstOption = select.firstElementChild;
+          select.innerHTML = "";
+          select.appendChild(firstOption);
+
+          stations.forEach((station, name) => {
+            const option = document.createElement("option");
+            option.value = name;
+            option.textContent = name;
+            select.appendChild(option);
+          });
+        });
+      }
+
+      function updateStats() {
+        document.getElementById("station-count").textContent = stations.size;
+        document.getElementById("track-count").textContent = tracks.size;
+
+        let totalDistance = 0;
+        tracks.forEach((track) => (totalDistance += track.distance));
+        document.getElementById(
+          "total-distance"
+        ).textContent = `${totalDistance} km`;
+      }
+
+      function clearNetwork() {
+        if (confirm("Are you sure you want to clear the entire network?")) {
+          stations.clear();
+          tracks.clear();
+          networkData.nodes.clear();
+          networkData.edges.clear();
+          updateStationDropdowns();
+          updateStats();
+          document.getElementById("proceed-btn").disabled = true;
+          clearError("builder-error");
+        }
+      }
+
+      function proceedToPathFinder() {
+        if (stations.size < 2) {
+          showError("builder-error", "Need at least 2 stations to find paths");
+          return;
+        }
+
+        // Switch to path finder page
+        document.getElementById("graph-builder").classList.remove("active");
+        document.getElementById("path-finder").classList.add("active");
+
+        // Initialize path finder graph
+        initializePathFinder();
+      }
+
+      // Path Finder Functions
+      function initializePathFinder() {
+        const container = document.getElementById("path-graph");
+        const options = {
+          physics: {
+            enabled: true,
+            stabilization: { iterations: 100 },
+          },
+          nodes: {
+            shape: "dot",
+            size: 20,
+            font: { size: 14, color: "#333" },
+            color: {
+              background: "#4CAF50",
+              border: "#45a049",
+              highlight: { background: "#66BB6A", border: "#4CAF50" },
+            },
+          },
+          edges: {
+            font: { size: 12, color: "#666" },
+            color: { color: "#848484" },
+            width: 2,
+            smooth: { type: "continuous" },
+          },
+          interaction: {
+            hover: true,
+            selectConnectedEdges: false,
+          },
+        };
+
+        // Clone the network data
+        const pathData = {
+          nodes: new vis.DataSet(networkData.nodes.get()),
+          edges: new vis.DataSet(networkData.edges.get()),
+        };
+
+        pathNetwork = new vis.Network(container, pathData, options);
+      }
+
+      function backToBuilder() {
+        document.getElementById("path-finder").classList.remove("active");
+        document.getElementById("graph-builder").classList.add("active");
+        clearPath();
+      }
+
+      async function findPath() {
+        const algorithm = document.querySelector(
+          'input[name="algorithm"]:checked'
+        ).value;
+        const source = document.getElementById("path-source").value;
+        const destination = document.getElementById("path-destination").value;
+
+        if (!source || !destination) {
+          showError(
+            "path-error",
+            "Please select both source and destination stations"
+          );
+          return;
+        }
+
+        if (source === destination) {
+          showError("path-error", "Source and destination cannot be the same");
+          return;
+        }
+
+        // Show loading
+        document.getElementById("path-loading").classList.add("show");
+        clearError("path-error");
+        document.getElementById("path-result").classList.remove("show");
+
+        try {
+          // Simulate API call to C++ backend
+          const result = await simulatePathfinding(
+            algorithm,
+            source,
+            destination
+          );
+
+          // Hide loading
+          document.getElementById("path-loading").classList.remove("show");
+
+          if (result.success) {
+            displayPathResult(result, algorithm);
+            highlightPath(result.path);
+          } else {
+            showError("path-error", result.error || "No path found");
+          }
+        } catch (error) {
+          document.getElementById("path-loading").classList.remove("show");
+          showError("path-error", "Error computing path: " + error.message);
+        }
+      }
+
+      // Mock API function (replace with actual backend integration)
+      async function simulatePathfinding(algorithm, source, destination) {
+        // Simulate network delay
+        await new Promise((resolve) =>
+          setTimeout(resolve, 1000 + Math.random() * 2000)
+        );
+
+        // Simple pathfinding simulation using BFS for demonstration
+        const path = findSimplePath(source, destination);
+
+        if (path.length === 0) {
+          return { success: false, error: "No path found between stations" };
+        }
+
+        // Calculate total distance
+        let totalDistance = 0;
+        for (let i = 0; i < path.length - 1; i++) {
+          const trackKey1 = `${path[i]}-${path[i + 1]}`;
+          const trackKey2 = `${path[i + 1]}-${path[i]}`;
+          const track = tracks.get(trackKey1) || tracks.get(trackKey2);
+          if (track) {
+            totalDistance += track.distance;
+          }
+        }
+
+        return {
+          success: true,
+          path: path,
+          distance: totalDistance,
+          algorithm: algorithm,
+        };
+      }
+
+      // Simple pathfinding implementation for demonstration
+      function findSimplePath(source, destination) {
+        const visited = new Set();
+        const queue = [[source]];
+
+        while (queue.length > 0) {
+          const path = queue.shift();
+          const current = path[path.length - 1];
+
+          if (current === destination) {
+            return path;
+          }
+
+          if (visited.has(current)) {
+            continue;
+          }
+
+          visited.add(current);
+
+          // Find connected stations
+          tracks.forEach((track, key) => {
+            let next = null;
+            if (track.source === current) {
+              next = track.destination;
+            } else if (track.destination === current) {
+              next = track.source;
+            }
+
+            if (next && !visited.has(next)) {
+              queue.push([...path, next]);
+            }
+          });
+        }
+
+        return [];
+      }
+
+      function displayPathResult(result, algorithm) {
+        document.getElementById("result-algorithm").textContent =
+          algorithm.toUpperCase();
+        document.getElementById("result-distance").textContent =
+          result.distance;
+        document.getElementById("result-stops").textContent =
+          result.path.length;
+
+        const stepsContainer = document.getElementById("path-steps");
+        stepsContainer.innerHTML = "";
+
+        result.path.forEach((station, index) => {
+          const li = document.createElement("li");
+          li.textContent = `${index + 1}. ${station}`;
+          stepsContainer.appendChild(li);
+        });
+
+        document.getElementById("path-result").classList.add("show");
+        currentPath = result.path;
+      }
+
+      function highlightPath(path) {
+        if (!pathNetwork || path.length < 2) return;
+
+        // Reset all nodes and edges to default colors
+        const allNodes = pathNetwork.body.data.nodes.get();
+        const allEdges = pathNetwork.body.data.edges.get();
+
+        allNodes.forEach((node) => {
+          pathNetwork.body.data.nodes.update({
+            id: node.id,
+            color: { background: "#4CAF50", border: "#45a049" },
+          });
+        });
+
+        allEdges.forEach((edge) => {
+          pathNetwork.body.data.edges.update({
+            id: edge.id,
+            color: { color: "#848484" },
+            width: 2,
+          });
+        });
+
+        // Highlight path nodes
+        for (let i = 0; i < path.length; i++) {
+          const stationName = path[i];
+          const station = stations.get(stationName);
+          if (station) {
+            pathNetwork.body.data.nodes.update({
+              id: station.id,
+              color: { background: "#FF5722", border: "#E64A19" },
+            });
+          }
+        }
+
+        // Highlight path edges
+        for (let i = 0; i < path.length - 1; i++) {
+          const sourceStation = stations.get(path[i]);
+          const destStation = stations.get(path[i + 1]);
+
+          if (sourceStation && destStation) {
+            // Find the edge between these stations
+            const edges = pathNetwork.body.data.edges.get();
+            const edge = edges.find(
+              (e) =>
+                (e.from === sourceStation.id && e.to === destStation.id) ||
+                (e.from === destStation.id && e.to === sourceStation.id)
+            );
+
+            if (edge) {
+              pathNetwork.body.data.edges.update({
+                id: edge.id,
+                color: { color: "#FF5722" },
+                width: 4,
+              });
+            }
+          }
+        }
+      }
+
+      function clearPath() {
+        if (!pathNetwork) return;
+
+        // Reset all nodes and edges to default colors
+        const allNodes = pathNetwork.body.data.nodes.get();
+        const allEdges = pathNetwork.body.data.edges.get();
+
+        allNodes.forEach((node) => {
+          pathNetwork.body.data.nodes.update({
+            id: node.id,
+            color: { background: "#4CAF50", border: "#45a049" },
+          });
+        });
+
+        allEdges.forEach((edge) => {
+          pathNetwork.body.data.edges.update({
+            id: edge.id,
+            color: { color: "#848484" },
+            width: 2,
+          });
+        });
+
+        document.getElementById("path-result").classList.remove("show");
+        clearError("path-error");
+        currentPath = [];
+      }
+
+      // Utility Functions
+      function showError(elementId, message) {
+        const errorElement = document.getElementById(elementId);
+        errorElement.textContent = message;
+        errorElement.classList.add("show");
+      }
+
+      function clearError(elementId) {
+        const errorElement = document.getElementById(elementId);
+        errorElement.classList.remove("show");
+      }
+
+      // Backend Integration Functions (to be implemented)
+
+      /**
+       * These functions should be implemented to integrate with your C++ backend
+       * Either via HTTP API calls or WebAssembly compilation
+       */
+
+      // Option 1: HTTP API Integration
+      async function callCppBackend(endpoint, data) {
+        try {
+          const response = await fetch(`/api/${endpoint}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          return await response.json();
+        } catch (error) {
+          console.error("Backend API call failed:", error);
+          throw error;
+        }
+      }
+
+      // Option 2: WebAssembly Integration (if you compile C++ to WASM)
+      async function initializeWasm() {
+        // This would load your C++ code compiled to WebAssembly
+        // const wasmModule = await import('./railway_optimizer.wasm');
+        // return wasmModule;
+      }
+
+      // Functions to integrate with your C++ backend:
+
+      async function createStationBackend(stationName) {
+        // Call C++ Station::createStation(name)
+        return await callCppBackend("station/create", { name: stationName });
+      }
+
+      async function addTrackBackend(source, destination, distance) {
+        // Call C++ addTracks(s1, s2, weight)
+        return await callCppBackend("track/add", {
+          source: source,
+          destination: destination,
+          distance: distance,
+        });
+      }
+
+      async function runPathfindingBackend(algorithm, source, destination) {
+        // Call appropriate C++ pathfinding function based on algorithm
+        const algorithmMap = {
+          astar: "aStarSearch",
+          dijkstra: "dijkstra",
+          bfs: "bfsMinNodes",
+          dfs: "printAllPathsDFS",
+        };
+
+        return await callCppBackend("pathfinding/" + algorithmMap[algorithm], {
+          source: source,
+          destination: destination,
+        });
+      }
+
+      // TODO: Replace simulatePathfinding with actual backend call
+      // async function findPath() {
+      //     // ... existing validation code ...
+      //
+      //     try {
+      //         const result = await runPathfindingBackend(algorithm, source, destination);
+      //         // Handle result...
+      //     } catch (error) {
+      //         showError('path-error', 'Backend error: ' + error.message);
+      //     }
+      // }
+    </script>
+  </body>
+</html>
