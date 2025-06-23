@@ -1,4 +1,4 @@
-# 🚆 Railway Network Optimization Project
+# Railway Network Optimization Project
 
 A Data Structures & Algorithms-based project to simulate and optimize railway network operations including route planning, train allocation, dynamic alerts, and network updates.
 
