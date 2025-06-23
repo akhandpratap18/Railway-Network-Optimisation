@@ -10,7 +10,6 @@ A Data Structures & Algorithms-based project to simulate and optimize railway ne
 - **Design** network using simple UI to add stations and tracks between them.  
   <img src="./images/NetworkDesign.jpg" width="600"/>
 
----
 
 ### 🔹 Path Optimization
 
