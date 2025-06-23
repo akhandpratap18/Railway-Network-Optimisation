@@ -22,7 +22,7 @@ A Data Structures & Algorithms-based project to simulate and optimize railway ne
 
 ## ⚙️ Technologies Used
 
-- **Language:** C++ / Python (based on DSA)
+- **Language:** C++, HTML, CSS
 - **Graph Algorithms:** Dijkstra’s, DFS, BFS, 
 - **Data Structures:** Adjacency List
 
